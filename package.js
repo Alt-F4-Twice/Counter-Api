@@ -1,12 +1,16 @@
 {
   "name": "discord-api-bot",
   "version": "1.0.0",
+  "description": "Discord bot with admin panel, leaderboard, VPN detection, and AES password encryption",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "dependencies": {
-    "discord.js": "^15.0.0",
+    "discord.js": "^15.1.0",
     "express": "^4.18.2",
     "bcrypt": "^5.1.0",
     "cookie-parser": "^1.4.6",
