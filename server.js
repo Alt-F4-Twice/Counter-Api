@@ -31,6 +31,9 @@ bot.login(BOT_TOKEN);
 // ==================== APP SETUP ====================
 
 const app = express();
+
+app.set('trust proxy', true);
+
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
