@@ -1,5 +1,7 @@
+
 // server.js
 // Full long-form version with Owner/Admin panel, leaderboard, VPN detection, AES passwords
+
 const { Client, GatewayIntentBits } = require('discord.js');
 const express = require("express");
 const fs = require("fs");
@@ -10,12 +12,7 @@ const cookieParser = require("cookie-parser");
 const rateLimit = require("express-rate-limit");
 
 // ==================== ENV VARIABLES ====================
-const BOT_TOKEN = process.env.BOT_TOKEN;  
-if (!BOT_TOKEN) {
-  console.error("❌ BOT_TOKEN is UNDEFINED");
-} else {
-  console.log("✅ BOT_TOKEN loaded");
-} // your Discord bot token
+const BOT_TOKEN = process.env.BOT_TOKEN;         // your Discord bot token
 const CHANNEL_ID = process.env.CHANNEL_ID;       // your Discord channel ID
 const OWNER_MASTER_PASSWORD = process.env.OWNER_MASTER_PASSWORD;
 const REVEAL_MASTER_PASSWORD = process.env.REVEAL_MASTER_PASSWORD;
@@ -28,26 +25,12 @@ if (!REVEAL_MASTER_PASSWORD) throw new Error("REVEAL_MASTER_PASSWORD not set in 
 
 // ==================== DISCORD BOT ====================
 const bot = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
-
-bot.once('ready', () => {
-  console.log(`✅ Bot is online as ${bot.user.tag}`);
-});
-
-(async () => {
-  try {
-    await bot.login(BOT_TOKEN);
-    console.log("✅ Bot login success");
-  } catch (err) {
-    console.error("❌ Bot login failed:", err);
-  }
-})();
+bot.once('ready', () => console.log(`Logged in as ${bot.user.tag}`));
+bot.login(BOT_TOKEN);
 
 // ==================== APP SETUP ====================
 
 const app = express();
-
-app.set('trust proxy', 1); // ✅ FIXED
-
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
@@ -213,15 +196,10 @@ function fetchJSON(url) {
 
 // ==================== DISCORD ALERT ===================
 
-async function sendDiscord(msg) {
-  try {
-    const channel = await bot.channels.fetch(CHANNEL_ID);
-    if (!channel) return console.error("Channel not found");
-
-    await channel.send(msg);
-  } catch (err) {
-    console.error("Discord error:", err);
-  }
+function sendDiscord(msg) {
+  const channel = bot.channels.cache.get(CHANNEL_ID);
+  if (!channel) return console.error('Discord channel not found!');
+  channel.send(msg).catch(console.error);
 }
 
 // ==================== VPN / PROXY / TOR DETECTION ===================
@@ -663,9 +641,6 @@ setInterval(() => {
 
 // ==================== START SERVER ===================
 
-app.listen(PORT, () => {
-  console.log("✅ Server running on port " + PORT);
-});
-
-// run this AFTER server starts
-initOwner();
+initOwner().then(() =>
+  app.listen(PORT, () => console.log("Server running on port " + PORT))
+);
