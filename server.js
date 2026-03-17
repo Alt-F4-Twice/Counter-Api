@@ -33,9 +33,14 @@ const bot = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.G
 bot.once('clientReady', () => {
   console.log(`Logged in as ${bot.user.tag}`);
 });
-bot.login(BOT_TOKEN).catch(err => {
-  console.error("Bot login failed:", err);
-});
+(async () => {
+  try {
+    await bot.login(BOT_TOKEN);
+    console.log("✅ Bot login success");
+  } catch (err) {
+    console.error("❌ Bot login failed:", err);
+  }
+})();
 
 // ==================== APP SETUP ====================
 
