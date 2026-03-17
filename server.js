@@ -12,7 +12,12 @@ const cookieParser = require("cookie-parser");
 const rateLimit = require("express-rate-limit");
 
 // ==================== ENV VARIABLES ====================
-const BOT_TOKEN = process.env.BOT_TOKEN;         // your Discord bot token
+const BOT_TOKEN = process.env.BOT_TOKEN;  
+if (!BOT_TOKEN) {
+  console.error("❌ BOT_TOKEN is UNDEFINED");
+} else {
+  console.log("✅ BOT_TOKEN loaded");
+} // your Discord bot token
 const CHANNEL_ID = process.env.CHANNEL_ID;       // your Discord channel ID
 const OWNER_MASTER_PASSWORD = process.env.OWNER_MASTER_PASSWORD;
 const REVEAL_MASTER_PASSWORD = process.env.REVEAL_MASTER_PASSWORD;
