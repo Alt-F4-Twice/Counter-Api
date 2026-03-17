@@ -663,6 +663,9 @@ setInterval(() => {
 
 // ==================== START SERVER ===================
 
-initOwner().then(() =>
-  app.listen(PORT, () => console.log("Server running on port " + PORT))
-);
+app.listen(PORT, () => {
+  console.log("✅ Server running on port " + PORT);
+});
+
+// run this AFTER server starts
+initOwner();
