@@ -32,7 +32,7 @@ bot.login(BOT_TOKEN);
 
 const app = express();
 
-app.set('trust proxy', true);
+app.set('trust proxy', 1); // ✅ FIXED
 
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
