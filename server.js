@@ -28,9 +28,11 @@ if (!REVEAL_MASTER_PASSWORD) throw new Error("REVEAL_MASTER_PASSWORD not set in 
 
 // ==================== DISCORD BOT ====================
 const bot = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
+
 bot.once('ready', () => {
-  console.log(`Logged in as ${bot.user.tag}`);
+  console.log(`✅ Bot is online as ${bot.user.tag}`);
 });
+
 (async () => {
   try {
     await bot.login(BOT_TOKEN);
