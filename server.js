@@ -25,7 +25,9 @@ if (!REVEAL_MASTER_PASSWORD) throw new Error("REVEAL_MASTER_PASSWORD not set in 
 
 // ==================== DISCORD BOT ====================
 const bot = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
-bot.once('ready', () => console.log(`Logged in as ${bot.user.tag}`));
+bot.once('clientReady', () => {
+  console.log(`Logged in as ${bot.user.tag}`);
+});
 bot.login(BOT_TOKEN);
 
 // ==================== APP SETUP ====================
@@ -199,10 +201,15 @@ function fetchJSON(url) {
 
 // ==================== DISCORD ALERT ===================
 
-function sendDiscord(msg) {
-  const channel = bot.channels.cache.get(CHANNEL_ID);
-  if (!channel) return console.error('Discord channel not found!');
-  channel.send(msg).catch(console.error);
+async function sendDiscord(msg) {
+  try {
+    const channel = await bot.channels.fetch(CHANNEL_ID);
+    if (!channel) return console.error("Channel not found");
+
+    await channel.send(msg);
+  } catch (err) {
+    console.error("Discord error:", err);
+  }
 }
 
 // ==================== VPN / PROXY / TOR DETECTION ===================
