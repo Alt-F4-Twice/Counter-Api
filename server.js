@@ -1,6 +1,5 @@
 // server.js
 // Full long-form version with Owner/Admin panel, leaderboard, VPN detection, AES passwords
-
 const { Client, GatewayIntentBits } = require('discord.js');
 const express = require("express");
 const fs = require("fs");
