@@ -1,6 +1,3 @@
-no work but worth saving 
-
-
 // server.js
 // Full long-form version with Owner/Admin panel, leaderboard, VPN detection, AES passwords
 
