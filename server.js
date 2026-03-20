@@ -54,30 +54,25 @@ async function isVPN(ip) {
   }
 }
 
-// Cleanup unregistered users after 2 minutes
+// Recalculate positions and cleanup every 10 seconds
 setInterval(() => {
   const now = Date.now();
 
-  // Get users sorted by position
-  const sortedUsers = [...users.values()].sort((a, b) => a.position - b.position);
-
-  // Find the first expired unregistered user
-  const expiredUser = sortedUsers.find(
-    u => !u.registered && now - u.createdAt > 120000
-  );
-
-  if (expiredUser) {
-    users.delete(expiredUser.id);
-    console.log("Deleted expired user:", expiredUser.id);
-
-    // Recalculate positions
-    const remainingUsers = [...users.values()].sort((a, b) => a.position - b.position);
-    remainingUsers.forEach((user, index) => {
-      user.position = index + 1;
-    });
+  // Remove expired unregistered users
+  for (const [id, user] of users) {
+    if (!user.registered && now - user.createdAt > 120000) {
+      users.delete(id);
+      console.log(`Deleted expired user: ${id}`);
+    }
   }
 
-}, 10000);
+  // Recalculate positions for all remaining users by joined time
+  const sortedUsers = [...users.values()].sort((a, b) => a.joined.localeCompare(b.joined));
+  sortedUsers.forEach((user, index) => {
+    user.position = index + 1;
+  });
+
+}, 10000); // runs every 10 seconds
 
 // Function to determine user name
 function getName(req) {
@@ -103,38 +98,25 @@ app.get("/counter", async (req, res) => {
 
   // Block VPN
   const vpn = await isVPN(ip);
-  if (vpn) {
-    return res.status(403).json({ error: "VPN/Proxy detected. Access denied." });
-  }
+  if (vpn) return res.status(403).json({ error: "VPN/Proxy detected" });
 
-  // Check if a user with this IP already exists
-  let user = [...users.values()].find(u => u.ip === ip && u.registered === false);
+  // Check if a user with this IP exists
+  let user = [...users.values()].find(u => u.ip === ip && !u.registered);
 
   if (!user) {
-    // New user
     const id = getUniqueId();
     const position = positionCounter++;
     const name = getName(req);
     const deleteKey = generateKey();
 
-    user = {
-      id,
-      name,
-      deleteKey,
-      position,
-      joined: new Date().toISOString(),
-      device: req.headers["user-agent"],
-      ip,
-      registered: false,
-      createdAt: Date.now()
-    };
-
+    user = { id, name, deleteKey, position, joined: new Date().toISOString(), device: req.headers["user-agent"], ip, registered: false, createdAt: Date.now() };
     users.set(id, user);
   } else {
-    // Refresh: update createdAt to prevent deletion from 2-minute timer
+    // Refresh their timer
     user.createdAt = Date.now();
   }
 
+  // Return user info with live position
   res.setHeader("Content-Type", "application/json");
   res.send(JSON.stringify({
     id: user.id,
@@ -179,10 +161,10 @@ app.get("/user/:id", (req, res) => {
   const user = users.get(id);
 
   if (!user) {
-    res.setHeader("Content-Type", "application/json");
-    return res.send(JSON.stringify({ error: "Invalid or expired ID" }, null, 2));
+    return res.status(404).json({ error: "Invalid or expired ID" });
   }
 
+  // Always return current position from the interval
   res.setHeader("Content-Type", "application/json");
   res.send(JSON.stringify({
     id: user.id,
