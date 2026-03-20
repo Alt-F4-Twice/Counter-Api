@@ -81,8 +81,8 @@ setInterval(() => {
     const sortedUsers = [...users.values()].sort((a, b) => a.position - b.position);
     sortedUsers.forEach((user, index) => {
       user.position = index + 1;
-    });
-}
+   });
+  } 
 
 }, 10000); // runs every 10 seconds
 
