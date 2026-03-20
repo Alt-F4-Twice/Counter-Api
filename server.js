@@ -79,15 +79,6 @@ setInterval(() => {
 
 }, 10000);
 
-    // Recalculate positions for all remaining users
-    const sortedUsers = [...users.values()].sort((a, b) => a.position - b.position);
-    sortedUsers.forEach((user, index) => {
-      user.position = index + 1;
-   });
-  } 
-
-}, 10000); // runs every 10 seconds
-
 // Function to determine user name
 function getName(req) {
   const userAgent = req.headers["user-agent"] || "";
@@ -162,19 +153,17 @@ app.get("/register/:id", (req, res) => {
 
   user.registered = true;
 
-  res.setHeader("Content-Type", "application/json");
-  res.send(JSON.stringify({
-    success: true,
-    message: "User registered successfully",
-    user: {
-      id: user.id,
-      name: user.name,
-      position: user.position,
-      joined: user.joined,
-      device: user.device,
-      ip: user.ip
-    }
-  }, null, 2));
+res.setHeader("Content-Type", "application/json");
+res.send(JSON.stringify({
+  id: user.id,
+  name: user.name,
+  position: user.position,
+  deleteKey: user.deleteKey,
+  joined: user.joined,
+  device: user.device,
+  ip: user.ip
+}, null, 2));
+
 });
 
 //User/:ID ROUTE
