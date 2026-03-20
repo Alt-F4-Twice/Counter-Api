@@ -132,29 +132,35 @@ app.get("/register/:id", (req, res) => {
   const user = users.get(id);
 
   if (!user) {
-    return res.status(404).json({ error: "Invalid or expired ID" });
+    res.setHeader("Content-Type", "application/json");
+    return res.send(JSON.stringify({ error: "Invalid or expired ID" }, null, 2));
   }
 
   user.registered = true;
 
-  res.json({
+  res.setHeader("Content-Type", "application/json");
+  res.send(JSON.stringify({
     success: true,
     message: "User registered successfully",
     user: {
       id: user.id,
-      position: user.position
+      name: user.name,
+      position: user.position,
+      joined: user.joined,
+      device: user.device,
+      ip: user.ip
     }
-  });
+  }, null, 2));
 });
 
-//user/:id route
-
+//User/:ID ROUTE
 app.get("/user/:id", (req, res) => {
   const { id } = req.params;
   const user = users.get(id);
 
   if (!user) {
-    return res.status(404).json({ error: "Invalid or expired ID" });
+    res.setHeader("Content-Type", "application/json");
+    return res.send(JSON.stringify({ error: "Invalid or expired ID" }, null, 2));
   }
 
   res.setHeader("Content-Type", "application/json");
