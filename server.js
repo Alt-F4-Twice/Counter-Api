@@ -46,11 +46,24 @@ async function isVPN(ip) {
 // Cleanup unregistered users after 2 minutes
 setInterval(() => {
   const now = Date.now();
+  let deletedAny = false;
+
+  // Delete unregistered users older than 2 minutes
   for (let [key, user] of users) {
     if (!user.registered && now - user.createdAt > 120000) {
       users.delete(key);
+      deletedAny = true;
       console.log("Deleted expired user:", user.id);
     }
+  }
+
+  // If anyone was deleted, recalc positions for remaining users
+  if (deletedAny) {
+    // Sort by original position
+    const sortedUsers = [...users.values()].sort((a, b) => a.position - b.position);
+    sortedUsers.forEach((user, index) => {
+      user.position = index + 1; // new positions start at 1
+    });
   }
 }, 10000);
 
