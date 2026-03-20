@@ -107,24 +107,33 @@ app.get("/counter", async (req, res) => {
     return res.status(403).json({ error: "VPN/Proxy detected. Access denied." });
   }
 
-  const id = getUniqueId();
-  const position = positionCounter++;
-  const name = getName(req);
-  const deleteKey = generateKey();
+  // Check if a user with this IP already exists
+  let user = [...users.values()].find(u => u.ip === ip && u.registered === false);
 
-  const user = {
-    id,
-    name,
-    deleteKey,
-    position,
-    joined: new Date().toISOString(),
-    device: req.headers["user-agent"],
-    ip,
-    registered: false,
-    createdAt: Date.now()
-  };
+  if (!user) {
+    // New user
+    const id = getUniqueId();
+    const position = positionCounter++;
+    const name = getName(req);
+    const deleteKey = generateKey();
 
-  users.set(id, user);
+    user = {
+      id,
+      name,
+      deleteKey,
+      position,
+      joined: new Date().toISOString(),
+      device: req.headers["user-agent"],
+      ip,
+      registered: false,
+      createdAt: Date.now()
+    };
+
+    users.set(id, user);
+  } else {
+    // Refresh: update createdAt to prevent deletion from 2-minute timer
+    user.createdAt = Date.now();
+  }
 
   res.setHeader("Content-Type", "application/json");
   res.send(JSON.stringify({
@@ -136,7 +145,6 @@ app.get("/counter", async (req, res) => {
     device: user.device,
     ip: user.ip
   }, null, 2));
-
 });
 
 // REGISTER ROUTE
