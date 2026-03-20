@@ -61,8 +61,10 @@ setInterval(() => {
   // Get users sorted by position
   const sortedUsers = [...users.values()].sort((a, b) => a.position - b.position);
 
-  // Find the first expired unregistered user by position
-  const expiredUser = sortedUsers.find(u => !u.registered && now - u.createdAt > 120000);
+  // Find the first expired unregistered user
+  const expiredUser = sortedUsers.find(
+    u => !u.registered && now - u.createdAt > 120000
+  );
 
   if (expiredUser) {
     users.delete(expiredUser.id);
@@ -74,8 +76,8 @@ setInterval(() => {
       user.position = index + 1;
     });
   }
-    
-}, 10000); // runs every 10 seconds
+
+}, 10000);
 
     // Recalculate positions for all remaining users
     const sortedUsers = [...users.values()].sort((a, b) => a.position - b.position);
