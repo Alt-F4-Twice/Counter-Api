@@ -47,20 +47,22 @@ async function isVPN(ip) {
 setInterval(() => {
   const now = Date.now();
 
-  // Find the first unregistered user who expired
+  // Find the first unregistered user that has expired (2 min)
   const expiredUserEntry = [...users.entries()].find(
-    ([key, user]) => !user.registered && now - user.createdAt > 120000
+    ([key, user]) => !user.registered && now - user.createdAt > 120000 // 2 min
   );
 
   if (expiredUserEntry) {
     const [key, user] = expiredUserEntry;
+
+    // Delete the expired user
     users.delete(key);
     console.log("Deleted expired user:", user.id);
 
-    // Recalculate positions for remaining users
+    // Recalculate positions for all remaining users
     const sortedUsers = [...users.values()].sort((a, b) => a.position - b.position);
     sortedUsers.forEach((user, index) => {
-      user.position = index + 1; // positions start at 1
+      user.position = index + 1;
     });
   }
 }, 10000); // runs every 10 seconds
