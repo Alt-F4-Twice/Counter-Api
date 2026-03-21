@@ -182,15 +182,15 @@ app.get("/user/:id", (req, res) => {
   res.setHeader("Content-Type", "application/json");
   res.setHeader("Refresh", "5"); // 👈 ADD THIS LINE
 
-  res.send(JSON.stringify({
-    id: user.id,
-    name: user.name,
-    position: user.position,
-    joined: user.joined,
-    device: user.device,
-    ip: user.ip
-  }, null, 2));
-});
+ res.send(JSON.stringify({
+  id: user.id,
+  name: user.name,
+  position: user.position,
+  registered: user.registered ? "yes" : "no", // 👈 ADD THIS
+  joined: user.joined,
+  device: user.device,
+  ip: user.ip
+}, null, 2));
 
   // DELETE ROUTE
 app.get("/delete/:id", (req, res) => {
