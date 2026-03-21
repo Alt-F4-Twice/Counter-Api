@@ -194,7 +194,6 @@ app.get("/user/:id", (req, res) => {
     position: user.position,
     registered: user.registered ? "yes" : "no",
     deleteKey: user.deleteKey,
-    viewKey: user.viewKey,
     joined: user.joined,
     device: user.device,
     ip: user.ip
