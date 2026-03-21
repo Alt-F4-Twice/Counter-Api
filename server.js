@@ -135,6 +135,7 @@ users.set(id, user);
     id: user.id,
     name: user.name,
     position: user.position,
+    registered: "yes",
     deleteKey: user.deleteKey,
     joined: user.joined,
     device: user.device,
