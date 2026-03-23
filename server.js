@@ -150,20 +150,6 @@ function getTimeRemaining(user) {
   return Math.floor(remaining / 1000);
 }
 
-  // Detect Apple Shortcut
-  if (userAgent.includes("Shortcuts")) {
-    return "ShortcutUser";
-  }
-
-  // If user provides a name in the URL query
-  if (req.query.name) {
-    return req.query.name;
-  }
-
-  // Default name
-  return "User";
-}
-
 // COUNTER ROUTE
 app.get("/counter", async (req, res) => {
   const ip = getIP(req);
@@ -172,29 +158,29 @@ app.get("/counter", async (req, res) => {
     return res.status(400).json({ error: "Could not determine IP" });
   }
 
-  // This is now valid because the function is async
+  // Check VPN/proxy risk
   const { risk } = await checkIP(ip);
-
   if (risk >= 50) {
     return res.status(403).json({ error: "VPN/Proxy detected" });
   }
 
-  // Prevent duplicate IP users
-  const existingUser = [...users.values()].find(u => u.ip === ip);
- if (existingUser) {
-  res.setHeader("Content-Type", "application/json");
-  return res.send(JSON.stringify({
-    id: existingUser.id,
-    name: existingUser.name,
-    position: existingUser.position,
-    registered: existingUser.registered ? "yes" : "no",
-    viewKey: existingUser.viewKey,
-    joined: existingUser.joined,
-    device: existingUser.device,
-    ip: existingUser.ip,
-    timeRemaining
-  }, null, 2));
-}
+  // Check for existing user by IP
+  let existingUser = [...users.values()].find(u => u.ip === ip);
+  if (existingUser) {
+    const timeRemaining = getTimeRemaining(existingUser);
+    res.setHeader("Content-Type", "application/json");
+    return res.send(JSON.stringify({
+      id: existingUser.id,
+      name: existingUser.name,
+      position: existingUser.position,
+      registered: existingUser.registered ? "yes" : "no",
+      viewKey: existingUser.viewKey,
+      joined: existingUser.joined,
+      device: existingUser.device,
+      ip: existingUser.ip,
+      timeRemaining
+    }, null, 2));
+  }
 
   // Generate new user
   const id = getUniqueId();
@@ -219,6 +205,8 @@ app.get("/counter", async (req, res) => {
 
   users.set(id, user);
 
+  const timeRemaining = getTimeRemaining(user);
+
   res.setHeader("Content-Type", "application/json");
   res.send(JSON.stringify({
     id: user.id,
@@ -228,10 +216,11 @@ app.get("/counter", async (req, res) => {
     viewKey: user.viewKey,
     joined: user.joined,
     device: user.device,
-    ip: user.ip
+    ip: user.ip,
+    timeRemaining
   }, null, 2));
 });
-
+  
 //User/:ID ROUTE
 app.get("/user/:id", (req, res) => {
   const { id } = req.params;       // <-- get the id from route
