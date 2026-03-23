@@ -164,10 +164,9 @@ app.get("/counter", async (req, res) => {
     return res.status(403).json({ error: "VPN/Proxy detected" });
   }
 
-  // Check for existing user by IP
-  let existingUser = [...users.values()].find(u => u.ip === ip);
+  // Prevent duplicate IP users
+  const existingUser = [...users.values()].find(u => u.ip === ip);
   if (existingUser) {
-    const timeRemaining = getTimeRemaining(existingUser);
     res.setHeader("Content-Type", "application/json");
     return res.send(JSON.stringify({
       id: existingUser.id,
@@ -178,7 +177,7 @@ app.get("/counter", async (req, res) => {
       joined: existingUser.joined,
       device: existingUser.device,
       ip: existingUser.ip,
-      timeRemaining
+      expiresAt: existingUser.expiresAt // countdown time for front-end
     }, null, 2));
   }
 
@@ -200,14 +199,15 @@ app.get("/counter", async (req, res) => {
     ip,
     risk,
     registered: false,
-    createdAt: Date.now()
+    createdAt: Date.now(),
+    expiresAt: Date.now() + 120000 // 2 minutes from now
   };
 
   users.set(id, user);
 
   const timeRemaining = getTimeRemaining(user);
 
-  res.setHeader("Content-Type", "application/json");
+   res.setHeader("Content-Type", "application/json");
   res.send(JSON.stringify({
     id: user.id,
     name: user.name,
@@ -217,10 +217,10 @@ app.get("/counter", async (req, res) => {
     joined: user.joined,
     device: user.device,
     ip: user.ip,
-    timeRemaining
+    expiresAt: user.expiresAt // send countdown to front-end
   }, null, 2));
 });
-  
+
 //User/:ID ROUTE
 app.get("/user/:id", (req, res) => {
   const { id } = req.params;       // <-- get the id from route
