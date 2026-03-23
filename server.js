@@ -163,18 +163,19 @@ app.get("/counter", async (req, res) => {
 
   // Prevent duplicate IP users
   const existingUser = [...users.values()].find(u => u.ip === ip);
-  if (existingUser) {
-    return res.json({
-      id: existingUser.id,
-      name: existingUser.name,
-      position: existingUser.position,
-      registered: existingUser.registered ? "yes" : "no",
-      viewKey: existingUser.viewKey,
-      joined: existingUser.joined,
-      device: existingUser.device,
-      ip: existingUser.ip
-    });
-  }
+ if (existingUser) {
+  res.setHeader("Content-Type", "application/json");
+  return res.send(JSON.stringify({
+    id: existingUser.id,
+    name: existingUser.name,
+    position: existingUser.position,
+    registered: existingUser.registered ? "yes" : "no",
+    viewKey: existingUser.viewKey,
+    joined: existingUser.joined,
+    device: existingUser.device,
+    ip: existingUser.ip
+  }, null, 2));
+}
 
   // Generate new user
   const id = getUniqueId();
