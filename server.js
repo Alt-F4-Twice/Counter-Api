@@ -174,6 +174,7 @@ const user = {
   joined: new Date().toISOString(),
   device: req.headers["user-agent"],
   ip,
+  risk,
   registered: false,
   createdAt: Date.now()
 };
