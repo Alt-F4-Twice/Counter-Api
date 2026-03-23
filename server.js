@@ -132,6 +132,24 @@ setInterval(() => {
 function getName(req) {
   const userAgent = req.headers["user-agent"] || "";
 
+  if (userAgent.includes("Shortcuts")) {
+    return "ShortcutUser";
+  }
+
+  if (req.query.name) {
+    return req.query.name;
+  }
+
+  return "User";
+}
+
+// ✅ OUTSIDE the function (important)
+function getTimeRemaining(user) {
+  const expireTime = user.createdAt + 120000; // 2 minutes
+  const remaining = Math.max(0, expireTime - Date.now());
+  return Math.floor(remaining / 1000);
+}
+
   // Detect Apple Shortcut
   if (userAgent.includes("Shortcuts")) {
     return "ShortcutUser";
@@ -173,7 +191,8 @@ app.get("/counter", async (req, res) => {
     viewKey: existingUser.viewKey,
     joined: existingUser.joined,
     device: existingUser.device,
-    ip: existingUser.ip
+    ip: existingUser.ip,
+    timeRemaining
   }, null, 2));
 }
 
