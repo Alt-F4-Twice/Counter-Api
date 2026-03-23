@@ -145,18 +145,34 @@ function getName(req) {
 }
 
 // COUNTER ROUTE
-const ip = getIP(req);
+app.get("/counter", async (req, res) => {
+  const ip = getIP(req);
 
-if (!ip) {
-  return res.status(400).json({ error: "Could not determine IP" });
-}
+  if (!ip) {
+    return res.status(400).json({ error: "Could not determine IP" });
+  }
 
-const { risk } = await checkIP(ip);
+  // This is now valid because the function is async
+  const { risk } = await checkIP(ip);
 
-// Block high-risk users
-if (risk >= 50) {
-  return res.status(403).json({ error: "VPN/Proxy detected" });
-}
+  if (risk >= 50) {
+    return res.status(403).json({ error: "VPN/Proxy detected" });
+  }
+
+  // Prevent duplicate IP users
+  const existingUser = [...users.values()].find(u => u.ip === ip);
+  if (existingUser) {
+    return res.json({
+      id: existingUser.id,
+      name: existingUser.name,
+      position: existingUser.position,
+      registered: existingUser.registered ? "yes" : "no",
+      viewKey: existingUser.viewKey,
+      joined: existingUser.joined,
+      device: existingUser.device,
+      ip: existingUser.ip
+    });
+  }
 
   // Generate new user
   const id = getUniqueId();
@@ -164,31 +180,30 @@ if (risk >= 50) {
   const name = getName(req);
   const viewKey = generateKey(16);
   const deleteKey = generateKey();
-  
-const user = {
-  id,
-  name,
-  position,
-  viewKey,
-  deleteKey,
-  joined: new Date().toISOString(),
-  device: req.headers["user-agent"],
-  ip,
-  risk,
-  registered: false,
-  createdAt: Date.now()
-};
 
-users.set(id, user);
+  const user = {
+    id,
+    name,
+    position,
+    viewKey,
+    deleteKey,
+    joined: new Date().toISOString(),
+    device: req.headers["user-agent"],
+    ip,
+    risk,
+    registered: false,
+    createdAt: Date.now()
+  };
 
-  // Return user info with live position
+  users.set(id, user);
+
   res.setHeader("Content-Type", "application/json");
   res.send(JSON.stringify({
     id: user.id,
     name: user.name,
     position: user.position,
     registered: "no",
-    viewKey: user.viewKey,   // <-- include viewKey here
+    viewKey: user.viewKey,
     joined: user.joined,
     device: user.device,
     ip: user.ip
