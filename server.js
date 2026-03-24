@@ -147,6 +147,10 @@ function getName(req) {
 }
 
 // COUNTER ROUTE
+// COUNTER ROUTE
+const cookieParser = require("cookie-parser");
+app.use(cookieParser());
+
 app.get("/counter", async (req, res) => {
   const ip = getIP(req);
 
@@ -154,33 +158,51 @@ app.get("/counter", async (req, res) => {
     return res.status(400).json({ error: "Could not determine IP" });
   }
 
-  // This is now valid because the function is async
-  const { risk } = await checkIP(ip);
+  // 1️⃣ Check cookie first
+  let userToken = req.cookies?.userToken;
+  if (userToken && users.has(userToken)) {
+    const existingUser = users.get(userToken);
+    // ✅ Set cookie again (permanent)
+    res.cookie("userToken", existingUser.id); // no maxAge → lasts until user clears it
+    return res.json({
+      id: existingUser.id,
+      name: existingUser.name,
+      position: existingUser.position,
+      registered: existingUser.registered ? "yes" : "no",
+      viewKey: existingUser.viewKey,
+      joined: existingUser.joined,
+      device: existingUser.device,
+      ip: existingUser.ip
+    });
+  }
 
+  // 2️⃣ VPN/proxy check
+  const { risk } = await checkIP(ip);
   if (risk >= 50) {
     return res.status(403).json({ error: "VPN/Proxy detected" });
   }
 
-  // Prevent duplicate IP users
- const existingUser = [...users.values()]
-  .filter(u => u.ip === ip)
-  .sort((a, b) => a.createdAt - b.createdAt)[0];
+  // 3️⃣ Check duplicate IP (ignore /test users)
+  const existingUser = [...users.values()]
+    .filter(u => u.ip === ip && u.ip !== "TEST")
+    .sort((a, b) => a.createdAt - b.createdAt)[0];
 
   if (existingUser) {
-  res.setHeader("Content-Type", "application/json");
-  return res.send(JSON.stringify({
-    id: existingUser.id,
-    name: existingUser.name,
-    position: existingUser.position,
-    registered: existingUser.registered ? "yes" : "no",
-    viewKey: existingUser.viewKey,
-    joined: existingUser.joined,
-    device: existingUser.device,
-    ip: existingUser.ip
-  }, null, 2));
-}
+    // ✅ Set permanent cookie
+    res.cookie("userToken", existingUser.id);
+    return res.json({
+      id: existingUser.id,
+      name: existingUser.name,
+      position: existingUser.position,
+      registered: existingUser.registered ? "yes" : "no",
+      viewKey: existingUser.viewKey,
+      joined: existingUser.joined,
+      device: existingUser.device,
+      ip: existingUser.ip
+    });
+  }
 
-  // Generate new user
+  // 4️⃣ Create new user
   const id = getUniqueId();
   const position = positionCounter++;
   const name = getName(req);
@@ -202,6 +224,9 @@ app.get("/counter", async (req, res) => {
   };
 
   users.set(id, user);
+
+  // ✅ Set permanent cookie
+  res.cookie("userToken", id);
 
   res.setHeader("Content-Type", "application/json");
   res.send(JSON.stringify({
