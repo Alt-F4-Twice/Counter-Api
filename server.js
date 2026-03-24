@@ -259,6 +259,28 @@ app.get("/test", (req, res) => {
   }, null, 2));
 });
 
+// LEADERBOARD ROUTE (admin only)
+app.get("/leaderboard", (req, res) => {
+  const key = req.query.key;
+  
+  if (key !== ADMIN_KEY) {
+    return res.status(403).json({ error: "Unauthorized" });
+  }
+
+  // Sort users by position
+  const sortedUsers = [...users.values()].sort((a, b) => a.position - b.position);
+
+  // Build a simple text table
+  let table = "Position | ID | Registered | IP\n";
+  table += "----------------------------------------\n";
+  sortedUsers.forEach(u => {
+    table += `${u.position} | ${u.id} | ${u.registered ? "yes" : "no"} | ${u.ip}\n`;
+  });
+
+  res.setHeader("Content-Type", "text/plain");
+  res.send(table);
+});
+
 //User/:ID ROUTE
 app.get("/user/:id", (req, res) => {
   const { id } = req.params;       // <-- get the id from route
