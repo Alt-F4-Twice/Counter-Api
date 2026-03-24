@@ -259,26 +259,62 @@ app.get("/test", (req, res) => {
   }, null, 2));
 });
 
-// LEADERBOARD ROUTE (admin only)
+// LEADERBOARD ROUTE (admin only, auto-refresh)
 app.get("/leaderboard", (req, res) => {
   const key = req.query.key;
   
   if (key !== ADMIN_KEY) {
-    return res.status(403).json({ error: "Unauthorized" });
+    return res.status(403).send("Unauthorized");
   }
 
   // Sort users by position
   const sortedUsers = [...users.values()].sort((a, b) => a.position - b.position);
 
-  // Build a simple text table
-  let table = "Position | ID | Registered | IP\n";
-  table += "----------------------------------------\n";
+  // Auto-refresh interval in seconds
+  const refreshInterval = 5; // refresh every 5 seconds
+
+  // Build HTML table
+  let tableRows = "";
   sortedUsers.forEach(u => {
-    table += `${u.position} | ${u.id} | ${u.registered ? "yes" : "no"} | ${u.ip}\n`;
+    tableRows += `<tr>
+      <td>${u.position}</td>
+      <td>${u.id}</td>
+      <td>${u.registered ? "yes" : "no"}</td>
+      <td>${u.ip}</td>
+    </tr>`;
   });
 
-  res.setHeader("Content-Type", "text/plain");
-  res.send(table);
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>Leaderboard</title>
+        <meta http-equiv="refresh" content="${refreshInterval}">
+        <style>
+          body { font-family: Arial, sans-serif; }
+          table { border-collapse: collapse; width: 100%; }
+          th, td { border: 1px solid #ccc; padding: 6px; text-align: left; }
+          th { background-color: #f0f0f0; }
+        </style>
+      </head>
+      <body>
+        <h1>Leaderboard</h1>
+        <table>
+          <tr>
+            <th>Position</th>
+            <th>ID</th>
+            <th>Registered</th>
+            <th>IP</th>
+          </tr>
+          ${tableRows}
+        </table>
+      </body>
+    </html>
+  `;
+
+  res.setHeader("Content-Type", "text/html");
+  res.send(html);
 });
 
 //User/:ID ROUTE
