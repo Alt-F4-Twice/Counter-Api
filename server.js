@@ -228,8 +228,8 @@ app.get("/counter", async (req, res) => {
   // ✅ Set permanent cookie
   res.cookie("userToken", id);
 
-  res.setHeader("Content-Type", "application/json");
-  res.send(JSON.stringify({
+res.setHeader("Content-Type", "application/json");
+res.send(JSON.stringify({...}, null, 2));
     id: user.id,
     name: user.name,
     position: user.position,
