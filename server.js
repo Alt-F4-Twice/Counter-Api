@@ -147,7 +147,6 @@ function getName(req) {
 }
 
 // COUNTER ROUTE
-// COUNTER ROUTE
 app.get("/counter", async (req, res) => {
   const ip = getIP(req);
   if (!ip) return res.status(400).json({ error: "Could not determine IP" });
@@ -228,6 +227,64 @@ app.get("/test", (req, res) => {
   users.set(id, user);
   res.setHeader("Content-Type", "application/json");
   res.send(JSON.stringify(user, null, 2));
+});
+
+// LEADERBOARD ROUTE (admin only, auto-refresh)
+app.get("/leaderboard", (req, res) => {
+  const key = req.query.key;
+  
+  if (key !== ADMIN_KEY) {
+    return res.status(403).send("Unauthorized");
+  }
+
+  // Sort users by position
+  const sortedUsers = [...users.values()].sort((a, b) => a.position - b.position);
+
+  // Auto-refresh interval in seconds
+  const refreshInterval = 5; // refresh every 5 seconds
+
+  // Build HTML table
+  let tableRows = "";
+  sortedUsers.forEach(u => {
+    tableRows += `<tr>
+      <td>${u.position}</td>
+      <td>${u.id}${u.ip === "TEST" ? " (TEST)" : ""}</td>
+      <td>${u.registered ? "yes" : "no"}</td>
+      <td>${u.ip}</td>
+    </tr>`;
+  });
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>Leaderboard</title>
+        <meta http-equiv="refresh" content="${refreshInterval}">
+        <style>
+          body { font-family: Arial, sans-serif; }
+          table { border-collapse: collapse; width: 100%; }
+          th, td { border: 1px solid #ccc; padding: 6px; text-align: left; }
+          th { background-color: #f0f0f0; }
+        </style>
+      </head>
+      <body>
+        <h1>Leaderboard</h1>
+        <table>
+          <tr>
+            <th>Position</th>
+            <th>ID</th>
+            <th>Registered</th>
+            <th>IP</th>
+          </tr>
+          ${tableRows}
+        </table>
+      </body>
+    </html>
+  `;
+
+  res.setHeader("Content-Type", "text/html");
+  res.send(html);
 });
 
 // USER/:ID ROUTE
