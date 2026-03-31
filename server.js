@@ -2,10 +2,11 @@
 
 const express = require("express");
 const axios = require("axios");
-const { v4: uuidv4 } = require("uuid");
+const cookieParser = require("cookie-parser");
 const ADMIN_KEY = process.env.ADMIN_KEY;
 
 const app = express();
+app.use(cookieParser());
 const PORT = process.env.PORT || 3000;
 
 // In-memory storage (replace with DB for production)
@@ -34,10 +35,10 @@ function generateKey(length = 20) {
 
 // Ensure unique ID
 function getUniqueId() {
-  let id;
-  do {
+  let id = generateId();
+  while (users.has(id)) {
     id = generateId();
-  } while ([...users.values()].some(u => u.id === id));
+  }
   return id;
 }
 
@@ -66,9 +67,9 @@ function getIP(req) {
 // VPN / Proxy check (basic)
 async function checkIP(ip) {
   try {
-    const res = await axios.get(
-      `http://ip-api.com/json/${ip}?fields=proxy,hosting,org`
-    );
+    const res = await axios.get(`https://ip-api.com/json/${ip}?fields=proxy,hosting,org`, {
+  timeout: 3000
+});
 
     const data = res.data;
     let risk = 0;
@@ -129,6 +130,11 @@ setInterval(() => {
 }, 10000); // runs every 10 seconds
 
 // Function to determine user name
+
+function sanitize(str) {
+  return str.replace(/[<>]/g, "");
+}
+
 function getName(req) {
   const userAgent = req.headers["user-agent"] || "";
 
@@ -138,9 +144,9 @@ function getName(req) {
   }
 
   // If user provides a name in the URL query
-  if (req.query.name) {
-    return req.query.name;
-  }
+ if (req.query.name) {
+  return sanitize(req.query.name);
+}
 
   // Default name
   return "User";
@@ -155,9 +161,7 @@ app.get("/counter", async (req, res) => {
   if (userToken && users.has(userToken)) {
     const existingUser = users.get(userToken);
     res.cookie("userToken", existingUser.id); // permanent cookie
-    res.setHeader("Content-Type", "application/json");
-    return res.send(JSON.stringify(existingUser, null, 2));
-  }
+ res.json(obj);
 
   const { risk } = await checkIP(ip);
   if (risk >= 50) return res.status(403).json({ error: "VPN/Proxy detected" });
@@ -168,9 +172,7 @@ app.get("/counter", async (req, res) => {
 
   if (existingUser) {
     res.cookie("userToken", existingUser.id);
-    res.setHeader("Content-Type", "application/json");
-    return res.send(JSON.stringify(existingUser, null, 2));
-  }
+    res.json(obj);
 
   const id = getUniqueId();
   const position = positionCounter++;
@@ -193,9 +195,10 @@ app.get("/counter", async (req, res) => {
   };
 
   users.set(id, user);
-  res.cookie("userToken", id);
-  res.setHeader("Content-Type", "application/json");
-  res.send(JSON.stringify(user, null, 2));
+res.cookie("userToken", id, {
+  httpOnly: true,
+  sameSite: "lax",
+  secure: process.env.NODE_ENV === "production"
 });
 
 // TEST ROUTE
@@ -225,9 +228,7 @@ app.get("/test", (req, res) => {
   };
 
   users.set(id, user);
-  res.setHeader("Content-Type", "application/json");
-  res.send(JSON.stringify(user, null, 2));
-});
+  res.json(obj);
 
 // LEADERBOARD ROUTE (admin only, auto-refresh)
 app.get("/leaderboard", (req, res) => {
@@ -303,12 +304,17 @@ app.get("/user/:id", (req, res) => {
 // REGISTER ROUTE
 app.get("/register/:id", (req, res) => {
   const { id } = req.params;
+  const key = req.query.key;
+
   const user = users.get(id);
   if (!user) return res.status(404).json({ error: "Invalid or expired ID" });
 
+  if (key !== user.viewKey && key !== ADMIN_KEY) {
+    return res.status(403).json({ error: "Unauthorized" });
+  }
+
   user.registered = true;
-  res.setHeader("Content-Type", "application/json");
-  res.send(JSON.stringify(user, null, 2));
+  res.json(user);
 });
 
 // DELETE ROUTE
