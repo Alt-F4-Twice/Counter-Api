@@ -104,29 +104,29 @@ setInterval(() => {
   const now = Date.now();
   let deleted = false;
 
-  // Delete expired unregistered users
   for (const [id, user] of users) {
-    if (!user.registered && now - user.createdAt > 120000) {
+    if (
+      !user.registered &&
+      now - new Date(user.joined).getTime() > 180000 // 3 minutes
+    ) {
       users.delete(id);
       deleted = true;
       console.log(`Deleted expired user: ${id}`);
     }
   }
 
-  // Only recalc positions if any user was deleted
   if (deleted) {
     const sortedUsers = [...users.values()]
-      .sort((a, b) => a.position - b.position); // preserve current order
+      .sort((a, b) => a.position - b.position);
 
     sortedUsers.forEach((user, index) => {
-      user.position = index + 1; // shift everyone up
+      user.position = index + 1;
     });
 
-    // Update positionCounter to max position + 1
     positionCounter = sortedUsers.length + 1;
   }
 
-}, 10000); // runs every 10 seconds
+}, 10000);
 
 // Function to determine user name
 function getName(req) {
@@ -164,7 +164,7 @@ app.get("/counter", async (req, res) => {
 
   const existingUser = [...users.values()]
     .filter(u => u.ip === ip && u.ip !== "TEST")
-    .sort((a, b) => a.createdAt - b.createdAt)[0];
+    .sort((a, b) => new Date(a.joined) - new Date(b.joined))[0];
 
   if (existingUser) {
     res.cookie("userToken", existingUser.id);
@@ -189,7 +189,6 @@ app.get("/counter", async (req, res) => {
     ip,
     risk,
     registered: false,
-    createdAt: Date.now()
   };
 
   users.set(id, user);
@@ -220,7 +219,6 @@ app.get("/test", (req, res) => {
     ip: "TEST",
     risk: 0,
     registered: false,
-    createdAt: Date.now(),
     test: true
   };
 
