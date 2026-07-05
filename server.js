@@ -125,34 +125,7 @@ async function prefetchCountries(userList) {
   await Promise.all(ips.map((ip) => getCountryCode(ip)));
 }
 
-async function checkIP(ip) {
-  try {
-    const res = await axios.get(
-      `http://ip-api.com/json/${ip}?fields=proxy,hosting,org`
-    );
-    const data = res.data;
-    let risk = 0;
-    if (data.proxy === true) risk += 40;
-    if (data.hosting === true) risk += 30;
-    if (data.org) {
-      const org = data.org.toLowerCase();
-      if (
-        org.includes("amazon") ||
-        org.includes("google") ||
-        org.includes("microsoft") ||
-        org.includes("digitalocean") ||
-        org.includes("linode") ||
-        org.includes("ovh")
-      ) {
-        risk += 30;
-      }
-    }
-    return { risk, data };
-  } catch {
-    return { risk: 0, data: {} };
-  }
-}
-
+/** Who may delete targetId with this key? */
 async function canDelete(targetId, key) {
   const user = await store.getUser(targetId);
   if (!user) return { ok: false, status: 404, error: "User not found" };
@@ -291,9 +264,6 @@ app.get("/counter", async (req, res) => {
     }
   }
 
-  const { risk } = await checkIP(ip);
-  if (risk >= 50) return res.status(403).json({ error: "VPN/Proxy detected" });
-
   const all = await store.getAllUsers();
   const existingUser = all
     .filter((u) => u.ip === ip && isRankedUser(u))
@@ -319,7 +289,6 @@ app.get("/counter", async (req, res) => {
     joined: new Date().toISOString(),
     device: req.headers["user-agent"],
     ip,
-    risk,
     registered: false,
   };
 
@@ -341,7 +310,6 @@ app.get("/test", async (req, res) => {
     joined: new Date().toISOString(),
     device: req.headers["user-agent"],
     ip: "TEST",
-    risk: 0,
     registered: false,
     test: true,
   };
@@ -363,7 +331,6 @@ app.get("/admin", async (req, res) => {
     joined: new Date().toISOString(),
     device: req.headers["user-agent"],
     ip: "ADMIN",
-    risk: 0,
     registered: false,
     admin: true,
   };
@@ -373,6 +340,7 @@ app.get("/admin", async (req, res) => {
   res.send(JSON.stringify(user, null, 2));
 });
 
+// Admin panel — JSON leaderboard (Shortcuts-friendly)
 app.get("/leaderboard", async (req, res) => {
   if (req.query.key !== ADMIN_KEY) {
     return sendJson(res, { error: "Unauthorized" }, 403);
@@ -393,6 +361,7 @@ app.get("/leaderboard", async (req, res) => {
   });
 });
 
+// Delete info — JSON (use /delete/:id or /delete/position/N to actually delete)
 app.get("/delete", async (req, res) => {
   const key = req.query.key;
   if (!key) {
@@ -460,6 +429,7 @@ async function findRankedUserByPosition(positionParam) {
   return { ok: true, user };
 }
 
+// Admin only — look up ranked /counter user by position number
 app.get("/user/position/:position", async (req, res) => {
   const key = req.query.key;
   if (key !== ADMIN_KEY) {
@@ -503,6 +473,7 @@ app.get("/register/:id", async (req, res) => {
   res.send(JSON.stringify(user, null, 2));
 });
 
+// Delete ranked user by position (same key rules as /delete/:id)
 app.get("/delete/position/:position", async (req, res) => {
   const key = req.query.key;
 
